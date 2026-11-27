@@ -108,9 +108,44 @@ footer{padding:2rem clamp(1.25rem,5vw,4rem);border-top:1px solid var(--line);col
 @media(max-width:800px){.split{grid-template-columns:1fr}}
 @media(max-width:640px){nav a.hide-sm{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.bar{animation:none}.btn,.play img{transition:none}}
+
+/* motion graphics */
+#prog{position:fixed;top:0;left:0;right:0;height:3px;z-index:11;background:linear-gradient(90deg,var(--amber),#F0BD63);transform-origin:0 50%;transform:scaleX(0)}
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.bgv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4;z-index:0}
+.hero h1{animation:rise 1.5s .8s cubic-bezier(.2,.7,.2,1) both}
+.hero .tag{animation:rise 1.2s 1.25s cubic-bezier(.2,.7,.2,1) both}
+.hero .cta{animation:rise 1.2s 1.5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(34px);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+.rec{position:absolute;left:clamp(1.25rem,5vw,4rem);bottom:calc(var(--bar)/2 - .6rem);z-index:3;display:flex;align-items:center;gap:.6rem;font:500 .8rem var(--body);letter-spacing:.14em;color:var(--soft);animation:fade 1s 1.6s both}
+.rec i{width:9px;height:9px;border-radius:50%;background:#E5484D;animation:blink 1.2s steps(2) infinite}
+.rec b{font-weight:500;font-variant-numeric:tabular-nums}
+@keyframes blink{50%{opacity:0}}
+@keyframes fade{from{opacity:0}}
+.js .rv{opacity:0;transform:translateY(28px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0)*90ms)}
+.js .rv.in{opacity:1;transform:none}
+.card .frame{transition:transform .5s cubic-bezier(.2,.7,.2,1),box-shadow .5s}
+.card:hover .frame{transform:translateY(-6px);box-shadow:0 26px 50px -22px rgba(227,169,74,.4)}
+.reel{padding-bottom:clamp(4rem,9vw,8rem);overflow:hidden}
+.reel-top{padding-bottom:2.5rem}
+.reel-top p{margin-top:1rem;max-width:44ch;color:var(--muted)}
+.strip{position:relative;background:#000;padding:30px 0;border-block:1px solid var(--line)}
+.strip::before,.strip::after{content:"";position:absolute;left:0;right:0;height:9px;z-index:1;background:repeating-linear-gradient(90deg,var(--bg) 0 14px,transparent 14px 34px)}
+.strip::before{top:10px}
+.strip::after{bottom:10px}
+.track{display:flex;gap:14px;width:max-content;animation:run 70s linear infinite}
+.strip:hover .track{animation-play-state:paused}
+@keyframes run{to{transform:translateX(-50%)}}
+.plate{position:relative;flex:none;width:clamp(240px,30vw,420px);aspect-ratio:2.39/1;overflow:hidden;background-color:#0A1417;background-size:220% 220%;animation:drift 16s ease-in-out infinite alternate}
+.plate video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.plate span{position:absolute;left:12px;bottom:9px;z-index:1;font:600 .72rem var(--body);letter-spacing:.14em;text-transform:uppercase;color:rgba(238,231,216,.85)}
+@keyframes drift{to{background-position:100% 100%}}
+@media(prefers-reduced-motion:reduce){.hero h1,.hero .tag,.hero .cta,.rec,.rec i,.track,.plate{animation:none}.rv{transition:none}}
 </style>
 </head>
 <body>
+
+<div id="prog" aria-hidden="true"></div>
 
 <header>
   <a class="logo" href="#top" aria-label="SRV Studios home">SRV Studios</a>
@@ -125,7 +160,9 @@ footer{padding:2rem clamp(1.25rem,5vw,4rem);border-top:1px solid var(--line);col
 <main id="top">
 
   <section class="hero" aria-label="SRV Studios">
+    <canvas id="fx" aria-hidden="true"></canvas>
     <div class="bar t"></div><div class="bar b"></div>
+    <div class="rec" aria-hidden="true"><i></i>REC <b id="tc">00:00:00:00</b></div>
     <div class="wrap">
       <h1>SRV Studios <span>Shikhar Rai Visions</span></h1>
       <p class="tag">Independent filmmaking and visual storytelling, made with a point of view.</p>
@@ -158,6 +195,14 @@ footer{padding:2rem clamp(1.25rem,5vw,4rem);border-top:1px solid var(--line);col
       </div>
       <div class="grid" id="grid"></div>
     </div>
+  </section>
+
+  <section class="reel" id="reel" aria-label="B-roll reel">
+    <div class="sec reel-top"><div class="wrap">
+      <h2>Behind the frame</h2>
+      <p>Light, texture and atmosphere: the look we chase on every shoot.</p>
+    </div></div>
+    <div class="strip" aria-hidden="true"><div class="track" id="track"></div></div>
   </section>
 
   <section class="sec" id="services">
@@ -253,6 +298,63 @@ PROJECTS.forEach(p => {
 });
 
 document.getElementById("yr").textContent = new Date().getFullYear();
+</script>
+<script>
+(function(){try{
+const still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* B-ROLL: put your own video files in the repo (for example broll/golden.mp4) and paste
+   the path below. Leave "" to keep the animated placeholder. */
+const HERO_VIDEO="";
+const REEL=[
+["Golden hour","linear-gradient(120deg,#2A1405,#C9812A 45%,#F2C36B 60%,#1A0D05)",""],
+["Night drive","radial-gradient(circle at 20% 70%,#1F6F7A,transparent 45%),linear-gradient(160deg,#03080A,#0D2A33)",""],
+["Fog","linear-gradient(100deg,#0B1215,#3B4B4F 50%,#0B1215)",""],
+["Neon rain","radial-gradient(circle at 70% 30%,#B5365A,transparent 40%),radial-gradient(circle at 20% 80%,#2B6F78,transparent 45%),#060B0D",""],
+["Dust light","radial-gradient(ellipse at 80% 10%,#F0BD63,transparent 50%),linear-gradient(180deg,#0A1417,#1A1206)",""],
+["Storm","linear-gradient(135deg,#050A0C,#24363B 50%,#070F11)",""],
+["Candle","radial-gradient(circle at 50% 60%,#E3A94A,#4A2406 35%,#050403 70%)",""],
+["Skyline","linear-gradient(0deg,#1B0F08,#C6602B 28%,#3A2A4D 60%,#070F11)",""]
+];
+const hero=document.querySelector(".hero");
+
+if(HERO_VIDEO&&hero){const v=document.createElement("video");v.className="bgv";v.src=HERO_VIDEO;v.muted=true;v.loop=true;v.autoplay=true;v.playsInline=true;v.setAttribute("aria-hidden","true");hero.prepend(v);v.play().catch(()=>{})}
+
+const cv=document.getElementById("fx");
+if(cv&&hero){
+const c=cv.getContext("2d");let w,h,d,raf=0,mx=0,my=0;
+const ps=[];for(let i=0;i<70;i++)ps.push({x:Math.random(),y:Math.random(),r:Math.random()*3+.8,s:Math.random()*.00006+.00002,a:Math.random()*.5+.15,t:Math.random()<.3});
+const leaks=[{x:.8,y:.35,r:.5,c:"227,169,74",p:0},{x:.1,y:.95,r:.55,c:"43,111,120",p:2}];
+const size=()=>{d=Math.min(devicePixelRatio||1,2);w=cv.width=hero.clientWidth*d;h=cv.height=hero.clientHeight*d};
+const draw=t=>{c.clearRect(0,0,w,h);c.globalCompositeOperation="lighter";
+leaks.forEach(l=>{const x=(l.x+Math.sin(t/4000+l.p)*.06+mx*.02)*w,y=(l.y+Math.cos(t/5000+l.p)*.05+my*.02)*h,r=l.r*Math.max(w,h);const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,"rgba("+l.c+",.18)");g.addColorStop(1,"rgba("+l.c+",0)");c.fillStyle=g;c.fillRect(0,0,w,h)});
+ps.forEach(p=>{p.y-=p.s*16;if(p.y<-.05)p.y=1.05;const x=(p.x+Math.sin(t/3000+p.r)*.01+mx*.015*p.r)*w;c.beginPath();c.arc(x,p.y*h,p.r*d,0,6.283);c.fillStyle=p.t?"rgba(80,170,180,"+p.a*.6+")":"rgba(238,200,130,"+p.a*.7+")";c.fill()})};
+const loop=t=>{draw(t);raf=requestAnimationFrame(loop)};
+size();addEventListener("resize",size);
+if(still){draw(0)}else{
+raf=requestAnimationFrame(loop);
+new IntersectionObserver(e=>{if(e[0].isIntersecting){if(!raf)raf=requestAnimationFrame(loop)}else{cancelAnimationFrame(raf);raf=0}}).observe(hero);
+hero.addEventListener("pointermove",e=>{const r=hero.getBoundingClientRect();mx=(e.clientX-r.left)/r.width-.5;my=(e.clientY-r.top)/r.height-.5})}
+}
+
+const tc=document.getElementById("tc");
+if(tc&&!still){const t0=performance.now(),z=n=>String(n).padStart(2,"0");
+setInterval(()=>{const f=Math.floor((performance.now()-t0)/(1000/24)),s=Math.floor(f/24);tc.textContent=z(Math.floor(s/3600))+":"+z(Math.floor(s/60)%60)+":"+z(s%60)+":"+z(f%24)},42)}
+
+const pr=document.getElementById("prog");
+if(pr){const u=()=>{const m=document.documentElement.scrollHeight-innerHeight;pr.style.transform="scaleX("+(m>0?scrollY/m:0)+")"};addEventListener("scroll",u,{passive:true});u()}
+
+const tr=document.getElementById("track");
+if(tr){const fr=document.createDocumentFragment();
+[0,1].forEach(k=>REEL.forEach((p,i)=>{const d=document.createElement("div");d.className="plate";d.style.backgroundImage=p[1];d.style.animationDelay=(-i*1.7)+"s";
+if(p[2]){const v=document.createElement("video");v.src=p[2];v.muted=true;v.loop=true;v.autoplay=true;v.playsInline=true;v.preload="metadata";d.append(v)}
+const s=document.createElement("span");s.textContent=p[0];d.append(s);fr.append(d)}));
+tr.append(fr)}
+
+if("IntersectionObserver" in window&&!still){
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.15,rootMargin:"0px 0px -6% 0px"});
+document.querySelectorAll(".about .split>*,.head,.card,.list li,.contact .wrap>*,.reel-top .wrap>*").forEach((el,i)=>{el.classList.add("rv");el.style.setProperty("--d",i%4);io.observe(el)});
+document.documentElement.classList.add("js")}
+}catch(e){}})();
 </script>
 </body>
 </html>
